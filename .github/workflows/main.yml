@@ -41,6 +41,6 @@ jobs:
         run: git push origin $NEXT_GIT_TAG
 
 
-#test_android_1.0.0+1 
+
 #echo "CURRENT_BUILD_VERSION=$(test_android_1.0.0+1  | awk -F 'test_android_' | cut -d'+' -f 1)"
 #echo "test_android_1.0.0+1" | awk -F "test_android_" '{print $2}' | cut -d'+' -f 1
