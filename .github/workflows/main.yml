@@ -27,7 +27,7 @@ jobs:
       - name: Set next build version
         run: echo "NEXT_BUILD_VERSION=$(echo ${{ env. CURRENT_BUILD_VERSION_MAJOR_MINOR }}.${{ env.CURRENT_BUILD_VERSION_PATCH }})" >> "$GITHUB_ENV"
       - name: Set current build number
-        run: echo "NEXT_BUILD_NUMBER=$(echo ${{ env.CURRENT_VERSION }} | cut -d'test_android_' -f 2 | cut -d'+' -f 2)" >> "$GITHUB_ENV"
+        run: echo "NEXT_BUILD_NUMBER=$(echo ${{ env.CURRENT_VERSION }} | awk -F "test_android_" '{print $2}' | cut -d'+' -f 2)" >> "$GITHUB_ENV"
       - name: Set next build number
         run: echo "NEXT_BUILD_NUMBER=$((${{ env.NEXT_BUILD_NUMBER }}+1))" >> "$GITHUB_ENV"
       - name: Print next build number tag
