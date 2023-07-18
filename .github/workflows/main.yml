@@ -15,7 +15,7 @@ jobs:
       - name: Read last version tag 
         run: |
           git fetch --prune --unshallow
-          echo "CURRENT_VERSION=$(git describe --tags `git rev-list --tags --max-count=1 --grep='^prod_android'`)" >> "$GITHUB_ENV"       
+          echo "CURRENT_VERSION=$(git tag --list 'prod_android*' --sort=-v:refname | head -n 1)" >> "$GITHUB_ENV"       
       - name: Set current build version
         run: echo "CURRENT_BUILD_VERSION=$(echo ${{ env.CURRENT_VERSION }} | awk -F "prod_android_" '{print $2}' | cut -d'+' -f 1)" >> "$GITHUB_ENV"
       - name: Set current build version patch
