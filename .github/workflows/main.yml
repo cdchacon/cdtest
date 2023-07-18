@@ -15,9 +15,9 @@ jobs:
       - name: Read last version tag 
         run: |
           git fetch --prune --unshallow
-          echo "CURRENT_VERSION=$(git describe --tags `git rev-list --tags --grep=test_android --max-count=1`)" >> "$GITHUB_ENV"       
+          echo "CURRENT_VERSION=$(git describe --tags `git rev-list --tags --max-count=1 --grep='^prod_android'`)" >> "$GITHUB_ENV"       
       - name: Set current build version
-        run: echo "CURRENT_BUILD_VERSION=$(echo ${{ env.CURRENT_VERSION }} | awk -F "test_android_" '{print $2}' | cut -d'+' -f 1)" >> "$GITHUB_ENV"
+        run: echo "CURRENT_BUILD_VERSION=$(echo ${{ env.CURRENT_VERSION }} | awk -F "prod_android_" '{print $2}' | cut -d'+' -f 1)" >> "$GITHUB_ENV"
       - name: Set current build version patch
         run: echo "CURRENT_BUILD_VERSION_PATCH=$(echo ${{ env.CURRENT_BUILD_VERSION }} | cut -d'.' -f 3)" >> "$GITHUB_ENV" 
       - name: Set current build version major and minor
@@ -27,14 +27,14 @@ jobs:
       - name: Set next build version
         run: echo "NEXT_BUILD_VERSION=$(echo ${{ env. CURRENT_BUILD_VERSION_MAJOR_MINOR }}.${{ env.CURRENT_BUILD_VERSION_PATCH }})" >> "$GITHUB_ENV"
       - name: Set current build number
-        run: echo "NEXT_BUILD_NUMBER=$(echo ${{ env.CURRENT_VERSION }} | awk -F "test_android_" '{print $2}' | cut -d'+' -f 2)" >> "$GITHUB_ENV"
+        run: echo "NEXT_BUILD_NUMBER=$(echo ${{ env.CURRENT_VERSION }} | awk -F "prod_android_" '{print $2}' | cut -d'+' -f 2 | cut -d'-' -f 1)" >> "$GITHUB_ENV"
       - name: Set next build number
         run: echo "NEXT_BUILD_NUMBER=$((${{ env.NEXT_BUILD_NUMBER }}+1))" >> "$GITHUB_ENV"
       - name: Print next build number tag
-        run: echo test_android_${{ env.NEXT_BUILD_VERSION }}+${{ env.NEXT_BUILD_NUMBER }}
+        run: echo prod_android_${{ env.NEXT_BUILD_VERSION }}+${{ env.NEXT_BUILD_NUMBER }}
 
       - name: Create new git version tag
-        run: echo "NEXT_GIT_TAG=test_android_${{ env.NEXT_BUILD_VERSION }}+${{ env.NEXT_BUILD_NUMBER }}" >> "$GITHUB_ENV"
+        run: echo "NEXT_GIT_TAG=prod_android_${{ env.NEXT_BUILD_VERSION }}+${{ env.NEXT_BUILD_NUMBER }}" >> "$GITHUB_ENV"
       - name: Update git version tag 
         run: git tag $NEXT_GIT_TAG
       - name: Push git tag 
