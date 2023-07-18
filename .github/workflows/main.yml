@@ -32,6 +32,7 @@ jobs:
         run: echo "NEXT_BUILD_NUMBER=$((${{ env.NEXT_BUILD_NUMBER }}+1))" >> "$GITHUB_ENV"
       - name: Print next build number tag
         run: echo test_android_${{ env.NEXT_BUILD_VERSION }}+${{ env.NEXT_BUILD_NUMBER }}
+        
       - name: Create new git version tag
         run: echo "NEXT_GIT_TAG='test_android_${{ env.NEXT_BUILD_VERSION }}+${{ env.NEXT_BUILD_NUMBER }}'" >> "$GITHUB_ENV"
       - name: Update git version tag 
