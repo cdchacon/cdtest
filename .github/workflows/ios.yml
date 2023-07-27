@@ -1,0 +1,82 @@
+name: Retgas CD - Deploy IOS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout the branch
+        uses: actions/checkout@v3
+      - name: Read last version tag 
+        run: |
+          git fetch --prune --unshallow
+          echo "CURRENT_VERSION=$(git tag --list 'v*' --sort=-v:refname | head -n 1)" >> "$GITHUB_ENV"       
+      - name: Set current build version
+        run: echo "CURRENT_BUILD_VERSION=$(echo ${{ env.CURRENT_VERSION }} | cut -d 'v' -f 2 | cut -d'+' -f 1)" >> "$GITHUB_ENV"
+      - name: Set current build version patch
+        run: echo "CURRENT_BUILD_VERSION_PATCH=$(echo ${{ env.CURRENT_BUILD_VERSION }} | cut -d'.' -f 3)" >> "$GITHUB_ENV" 
+      - name: Set current build version major and minor
+        run: echo "CURRENT_BUILD_VERSION_MAJOR_MINOR=$(echo ${{ env.CURRENT_BUILD_VERSION }} | cut -d'.' -f 1,2)" >> "$GITHUB_ENV"
+      - name: Increment version patch
+        run: echo "CURRENT_BUILD_VERSION_PATCH=$((${{ env. CURRENT_BUILD_VERSION_PATCH }}+1))" >> "$GITHUB_ENV"
+      - name: Set next build version
+        run: echo "NEXT_BUILD_VERSION=$(echo ${{ env. CURRENT_BUILD_VERSION_MAJOR_MINOR }}.${{ env.CURRENT_BUILD_VERSION_PATCH }})" >> "$GITHUB_ENV"
+      - name: Set current build number
+        run: echo "NEXT_BUILD_NUMBER=$(echo ${{ env.CURRENT_VERSION }} | cut -d'v' -f 2 | cut -d'+' -f 2)" >> "$GITHUB_ENV"
+      - name: Set next build number
+        run: echo "NEXT_BUILD_NUMBER=$((${{ env.NEXT_BUILD_NUMBER }}+1))" >> "$GITHUB_ENV"
+      - name: Print next build number tag
+        run: echo v${{ env.NEXT_BUILD_VERSION }}+${{ env.NEXT_BUILD_NUMBER }}
+      - name: Install flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.10.5'
+          channel: 'stable'
+          architecture: x64
+      - name: Get packages
+        run: flutter pub get
+      # - name: build mobx
+      #   run: flutter packages pub run build_runner build
+      # - name: Build runner
+      #   run: flutter pub run build_runner build --delete-conflicting-outputs  
+      - name: Release compilation
+        run: flutter build ios --release --build-name ${{env.NEXT_BUILD_VERSION }} --build-number ${{env.NEXT_BUILD_NUMBER}} --no-codesign
+
+#####################
+      - name: export ipa
+        env:
+          EXPORT_PLIST: ${{secrets.IOS_EXPORT_PRODUCTION}} 
+        run: |
+          # crete export options
+          EXPORT_PLIST_PATH=$RUNNER_TEMP/ExportOptions.plist
+          echo -n "EXPORT_PLIST" | base64 --decode --output $EXPORT_PLIST_PATH 
+          ls $RUNNER_TEMP
+          xcodebuild -exportArchive -archivePath $GITHUB_WORKSPACE/Runner.xcarchive -exportOptionsPlist $EXPORT_PLIST_PATH -exportPath $RUNNER_TEMP/exportOptions.plist
+
+
+        # xcodebuild -exportArchive -archivePath "build/ios/archive/Runner.xcarchive" -exportPath "build/ios/ipa" -exportOptionsPlist "ios/exportOptions.plist"
+
+
+      - name: Rename the file, remove whitespace 
+        run: |
+            echo Export directory contents:
+            ls /Users/runner/ios-runner/_work/_temp/export/
+            mv " /Users/cobemacmini/ios-runner/_work/_temp/export/test.ipa" "/Users/cobemacmini/ios-runner/_work/_temp/export/test.ipa"
+            ls /Users/cobemacmini/ios-runner/_work/_temp/export/
+      - name: Decode auth. api key file and save it 
+        env:  
+          API_KEY_BASE64: ${{secrets.APPSTORE_API_PRIVATE_KEY}}
+        run: |
+            mkdir ~/private_keys
+            echo -n "$API_KEY_BASE64" | base64 --decode --output ~/private_keys/AuthKey_${{secrets.APPSTORE_API_KEY_ID}}.p8
+            echo "After saving: "
+            ls ~/private_keys
+      
+      - name: "Upload file to test flight using CLI"
+        run: | 
+            echo "Starting upload."
+            ls ~/private_keys
+            xcrun altool --validate-app -f /Users/cobemacmini/ios-runner/_work/_temp/export/test.ipa -t ios --apiKey "${{ secrets.APPSTORE_API_KEY_ID}}" --apiIssuer "${{ secrets.APPSTORE_ISSUER_ID }}"
+            xcrun altool --upload-app -f /Users/cobemacmini/ios-runner/_work/_temp/export/test.ipa -t ios --apiKey "${{ secrets.APPSTORE_API_KEY_ID}}" --apiIssuer "${{ secrets.APPSTORE_ISSUER_ID }}"            
