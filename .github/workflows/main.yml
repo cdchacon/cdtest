@@ -1,4 +1,4 @@
-name: Retgas CD - Deploy Android
+name: test - Deploy Android
 
 on:
   push:
