@@ -5,7 +5,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: macos-latest
+    runs-on: macos-13-xl
     steps:
       - name: Checkout the branch
         uses: actions/checkout@v3
